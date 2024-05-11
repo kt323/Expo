@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, TextInput, ImageBackground, TouchableOpacity } 
 
 const Start = ({ navigation }) => {
   const [username, setUsername] = useState('');
-  const [background, setBackground] = useState('#090C08'); 
+  const [background, setBackground] = useState(''); 
   const colors = ['#090C08', '#474056', '#8A95A5', '#B9C6AE'];
 
   return (
@@ -12,15 +12,17 @@ const Start = ({ navigation }) => {
         source={require("../image/Background-Image.png")}
         style={styles.imageBackground}
       >
-        <Text style={styles.title}>Morning!</Text>
+        <Text style={styles.title}>ConnectoChat !</Text>
         <View style={styles.box}>
+
           <TextInput
             style={styles.textInput}
             value={username}
             onChangeText={setUsername}
             placeholder="Your name"
           />
-          <Text style={styles.chooseBgColor}>Choose Background Color:</Text>
+          <Text style={styles.chooseBgColor}>Choose Background Color</Text>
+
           <View style={styles.colorButtonContainer}>
             {colors.map((color, index) => (
               <TouchableOpacity
@@ -37,6 +39,7 @@ const Start = ({ navigation }) => {
               />
             ))}
           </View>
+
           <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('Chat', { username, background })}
@@ -70,7 +73,7 @@ const styles = StyleSheet.create({
     margin: 25,
   },
   box: {
-    backgroundColor: '#f2f2f2',
+    backgroundColor: background,
     borderRadius: 4,
     width: '88%',
     height: '50%',
