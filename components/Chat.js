@@ -1,50 +1,49 @@
 import { useState, useEffect } from "react";
 import { StyleSheet, View, Platform, KeyboardAvoidingView } from 'react-native';
 import { Bubble, GiftedChat } from "react-native-gifted-chat";
+import { addDoc, collection, query, orderBy, onSnapshot } from "firebase/firestore";
 
-const Chat = ({ route, navigation }) => {
+const Chat = ({ db, route, navigation }) => {
   const [messages, setMessages] = useState([]);
   const { username, background } = route.params;
 
   useEffect(() => {
-    navigation.setOptions({ title: username })
-    setMessages([
-      {
-        _id: 1,
-        text: 'Hello developer',
-        createdAt: new Date(),
-        user: {
-          _id: 2,
-          name: 'React Native',
-          avatar: 'https://placeimg.com/140/140/any',
-        },
-      },
-      {
-        _id: 2,
-        text: 'This is a system message',
-        createdAt: new Date(),
-        system: true,
-      },
-    ]);
-
-  }, []);
+    navigation.setOptions({ title: name });
+    const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+    const unsubMessages = onSnapshot(q, (docs) => {
+      let newMessages = [];
+      docs.forEach(doc => {
+        newMessages.push({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: new Date(doc.data().createdAt.toMillis())
+        })
+      })
+      setMessages(newMessages);
+    })
+    return () => {
+      if (unsubMessages) unsubMessages();
+    }
+   }, []);
 
   const onSend = (newMessages) => {
-    setMessages(previousMessages => GiftedChat.append(previousMessages, newMessages))
-  }
+    addDoc(collection(db, "messages"), newMessages[0]);
+  };
 
   const renderBubble = (props) => {
-    return <Bubble
-      {...props}
-      wrapperStyle={{
-        right: {
-          backgroundColor: "#000"
-        },
-        left: {
-          backgroundColor: "#FFF"
-        }
-      }}
-    />
+    return (
+      <Bubble
+        {...props}
+        wrapperStyle={{
+          right: {
+            backgroundColor: "#000"
+          },
+          left: {
+            backgroundColor: "#FFF"
+          }
+        }}
+      />
+    );
   }
 
   return (
@@ -52,15 +51,15 @@ const Chat = ({ route, navigation }) => {
       <GiftedChat
         messages={messages}
         renderBubble={renderBubble}
-        onSend={messages => onSend(messages)}
+        onSend={onSend}
         user={{
-          _id: 1,
-          username
+          _id: route.params.userID,
+          name: route.params.username
         }}
       />
       {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
