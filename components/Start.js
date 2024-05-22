@@ -1,62 +1,53 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Alert, ImageBackground, StyleSheet, Text, TextInput, View, TouchableOpacity } from "react-native";
 import { getAuth, signInAnonymously } from 'firebase/auth';
 
 export const Start = ({ navigation }) => {
-  const [username, setName] = useState('');
-  const COLORS = ["#090C08", "#474056", "#8A95A5", "#B9C6AE"];
-  const [bgColor, setBGColor] = useState(COLORS[3]);
-
   const auth = getAuth();
+  const [username, setUsername] = useState('');
+  const COLORS = ["#090C08", "#474056", "#8A95A5", "#B9C6AE"];
+  const [bgColor, setBgColor] = useState(COLORS[3]);
 
-  const signInUser = () => {
-    signInAnonymously(auth)
-      .then(res => {
-        navigation.navigate("Chat", { userID: res.user.uid, username: username, background: bgColor });
-        Alert.alert("Signed in Successfully");
-      })
-      .catch(err => {
-        Alert.alert("Unable to sign in, try later again");
-      });
+  const signInUser = async () => {
+    try {
+      const { user } = await signInAnonymously(auth);
+      navigation.navigate("Chat", { userID: user.uid, username, background: bgColor });
+      Alert.alert("Signed in Successfully");
+    } catch (err) {
+      Alert.alert("Unable to sign in, try again later");
+      console.error("Sign in error:", err);
+    }
   };
 
   return (
     <ImageBackground source={require('../image/Background-Image.png')} style={styles.container}>
       <Text style={styles.title}>Chat App</Text>
-
       <View style={styles.content}>
         <TextInput
           value={username}
-          onChangeText={setName}
+          onChangeText={setUsername}
           style={styles.textInput}
           placeholder="Your Name"
+          autoCapitalize="words"
         />
         <Text style={styles.text}>Choose background color</Text>
         <View style={styles.bgColors}>
-          {COLORS.map(color => {
-            return (
-              <View
-                key={`custom-${color}`}
-                style={{
-                  ...styles.colorBlock,
-                  backgroundColor: color,
-                }}
-                onTouchEnd={() => {
-                  setBGColor(color);
-                }}
-              />
-            );
-          })}
+          {COLORS.map(color => (
+            <TouchableOpacity
+              key={color}
+              style={{
+                ...styles.colorBlock,
+                backgroundColor: color,
+                borderWidth: bgColor === color ? 2 : 0,
+              }}
+              onPress={() => setBgColor(color)}
+            />
+          ))}
         </View>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => {
-            if (username === '') {
-              Alert.alert('You need a username');
-            } else {
-              signInUser();
-            }
-          }}
+          onPress={signInUser}
+          disabled={!username}
         >
           <Text style={styles.buttonText}>Start Chatting</Text>
         </TouchableOpacity>
@@ -118,3 +109,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 });
+
+export default Start;
