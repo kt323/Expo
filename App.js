@@ -34,12 +34,13 @@ const App = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setUser({ uid: user.uid, name: user.displayName });
+        setUser({ uid: user.uid, name: user.displayName || 'Anonymous' });
       } else {
         setUser(null);
       }
       setLoading(false);
     });
+  
     return unsubscribe;
   }, []);
 
@@ -56,7 +57,7 @@ const App = () => {
       <Stack.Navigator initialRouteName="Start">
         <Stack.Screen name="Start" component={Start} />
         <Stack.Screen name="Chat">
-          {(props) => <Chat {...props} db={db} userID={user?.uid} name={user?.name} />}
+          {(props) => <Chat {...props} db={db} storage={storage} userID={user?.uid} name={user?.name} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>

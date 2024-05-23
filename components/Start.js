@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import { Alert, ImageBackground, StyleSheet, Text, TextInput, View, TouchableOpacity } from "react-native";
 import { getAuth, signInAnonymously } from 'firebase/auth';
 
@@ -11,7 +10,7 @@ export const Start = ({ navigation }) => {
   const signInUser = async () => {
     try {
       const { user } = await signInAnonymously(auth);
-      navigation.navigate("Chat", { userID: user.uid, username, background: bgColor });
+      navigation.navigate("Chat", { userID: user.uid, name: username, background: bgColor });
       Alert.alert("Signed in Successfully");
     } catch (err) {
       Alert.alert("Unable to sign in, try again later");
