@@ -1,29 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { StyleSheet, View, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Bubble, GiftedChat } from "react-native-gifted-chat";
-import { getDocs, addDoc, collection, query, orderBy, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, query, orderBy, onSnapshot, serverTimestamp } from "firebase/firestore";
 
 const Chat = ({ route, navigation, db }) => {
   const { name, userID, background } = route.params;
   const [messages, setMessages] = useState([]);
-  const [isConnected, setIsConnected] = useState(false);
-  let unsubMessages;
+  const [isConnected, setIsConnected] = useState(true); 
+  const unsubMessagesRef = useRef(null);
 
   useEffect(() => {
     navigation.setOptions({ title: name });
 
     if (isConnected) {
-      if (unsubMessages) unsubMessages();
-      unsubMessages = null;
+      if (unsubMessagesRef.current) {
+        unsubMessagesRef.current();
+      }
 
       const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
-      unsubMessages = onSnapshot(q, (querySnapshot) => {
+      unsubMessagesRef.current = onSnapshot(q, (querySnapshot) => {
         const newMessages = [];
         querySnapshot.forEach((doc) => {
+          const data = doc.data();
           newMessages.push({
             _id: doc.id,
-            ...doc.data(),
-            createdAt: doc.data().createdAt.toDate(), 
+            ...data,
+            createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
           });
         });
         setMessages(newMessages);
@@ -31,7 +33,9 @@ const Chat = ({ route, navigation, db }) => {
     }
 
     return () => {
-      if (unsubMessages) unsubMessages();
+      if (unsubMessagesRef.current) {
+        unsubMessagesRef.current();
+      }
     };
   }, [isConnected]);
 
@@ -48,16 +52,13 @@ const Chat = ({ route, navigation, db }) => {
     }
 
     try {
-      const docRef = await addDoc(collection(db, "messages"), {
+      await addDoc(collection(db, "messages"), {
         text: message.text,
         createdAt: serverTimestamp(),
         user: {
           _id: userID,
           name,
         },
-      });
-      await docRef.update({
-        _id: docRef.id
       });
       console.log("Message added to Firestore:", message);
     } catch (error) {

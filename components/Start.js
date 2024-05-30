@@ -1,7 +1,8 @@
+import React, { useState } from "react";
 import { Alert, ImageBackground, StyleSheet, Text, TextInput, View, TouchableOpacity } from "react-native";
 import { getAuth, signInAnonymously } from 'firebase/auth';
 
-export const Start = ({ navigation }) => {
+const Start = ({ navigation }) => {
   const auth = getAuth();
   const [username, setUsername] = useState('');
   const COLORS = ["#090C08", "#474056", "#8A95A5", "#B9C6AE"];
@@ -34,11 +35,10 @@ export const Start = ({ navigation }) => {
           {COLORS.map(color => (
             <TouchableOpacity
               key={color}
-              style={{
-                ...styles.colorBlock,
-                backgroundColor: color,
-                borderWidth: bgColor === color ? 2 : 0,
-              }}
+              style={[
+                styles.colorBlock,
+                { backgroundColor: color, borderWidth: bgColor === color ? 2 : 0 },
+              ]}
               onPress={() => setBgColor(color)}
             />
           ))}
@@ -58,7 +58,6 @@ export const Start = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -73,23 +72,28 @@ const styles = StyleSheet.create({
     width: '88%',
     padding: '6%',
     marginTop: '60%',
+    borderRadius: 10,
+    alignItems: 'center',
   },
   textInput: {
-    width: '88%',
+    width: '100%',
     padding: 15,
     borderWidth: 1,
+    borderColor: '#757083',
+    borderRadius: 5,
     marginTop: 15,
     marginBottom: 15,
+    fontSize: 16,
   },
   text: {
     fontSize: 16,
     fontWeight: '300',
     color: '#757083',
-    opacity: 100,
   },
   bgColors: {
-    flex: 1,
     flexDirection: 'row',
+    marginTop: 10,
+    marginBottom: 20,
   },
   colorBlock: {
     width: 50,
@@ -100,7 +104,8 @@ const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
     backgroundColor: '#757083',
-    padding: 10,
+    padding: 15,
+    borderRadius: 5,
   },
   buttonText: {
     fontSize: 16,
