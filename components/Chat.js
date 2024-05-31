@@ -1,43 +1,76 @@
 import React, { useState, useEffect, useRef } from "react";
 import { StyleSheet, View, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { Bubble, GiftedChat } from "react-native-gifted-chat";
+import { Bubble, GiftedChat, InputToolbar } from "react-native-gifted-chat";
 import { addDoc, collection, query, orderBy, onSnapshot, serverTimestamp } from "firebase/firestore";
+import {AsyncStorage} from "@react-native-async-storage/async-storage";
 
-const Chat = ({ route, navigation, db }) => {
+const Chat = ({ route, navigation, db, isConnected, storage }) => {
   const { name, userID, background } = route.params;
   const [messages, setMessages] = useState([]);
   const [isConnected, setIsConnected] = useState(true); 
   const unsubMessagesRef = useRef(null);
 
+  const renderBubble = (props) => (
+    <Bubble
+      {...props}
+      wrapperStyle={{
+        right: {
+          backgroundColor: "#000",
+        },
+        left: {
+          backgroundColor: "#FFF",
+        },
+      }}
+    />
+  );
+
+  const renderInputToolbar = (props) => {
+    if (isConnected) return <InputToolbar {...props} />;
+    else return null;
+   }
+
+  let unsubMessages;
   useEffect(() => {
-    navigation.setOptions({ title: name });
-
-    if (isConnected) {
-      if (unsubMessagesRef.current) {
-        unsubMessagesRef.current();
-      }
-
+    if (isConnected === true){
+    if (unsubMessages) unsubMessages();
+    unsubMessages = null;
+      navigation.setOptions({ title: username });
       const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
-      unsubMessagesRef.current = onSnapshot(q, (querySnapshot) => {
-        const newMessages = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          newMessages.push({
-            _id: doc.id,
-            ...data,
-            createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
-          });
+      unsubMessages = onSnapshot(q, (docs) => {
+        let newMessages = [];
+        docs.forEach(doc => {
+          newMessages.push({ id: doc.id, ...doc.data(),  createdAt: new Date(doc.data().createdAt.toMillis()), })
         });
+        cacheMessages(newMessages);
         setMessages(newMessages);
       });
-    }
-
-    return () => {
-      if (unsubMessagesRef.current) {
-        unsubMessagesRef.current();
+    } else loadCachedMessages();
+    
+      return () => {
+        if (unsubMessages) unsubMessages();
+      }
+    }, [isConnected]); 
+  
+    const cacheMessages = async (messagesToCache) => {
+      try {
+        await AsyncStorage.setItem(
+          "messages",
+          JSON.stringify(messagesToCache)
+        );
+      } catch (error) {
+        console.log(error.message);
       }
     };
-  }, [isConnected]);
+
+    const loadCachedMessages = async () => {
+    const cachedMessages = (await AsyncStorage.getItem("messages")) || [];
+      setMessages(JSON.parse(cachedMessages));
+    };
+
+    const renderCustomActions = (props) => {
+      return <CustomActions storage={storage} userID={userID} {...props} />;
+    };
+
 
   const onSend = async (newMessages) => {
     const message = newMessages[0];
@@ -67,29 +100,19 @@ const Chat = ({ route, navigation, db }) => {
     }
   };
 
-  const renderBubble = (props) => (
-    <Bubble
-      {...props}
-      wrapperStyle={{
-        right: {
-          backgroundColor: "#000",
-        },
-        left: {
-          backgroundColor: "#FFF",
-        },
-      }}
-    />
-  );
 
   return (
     <View style={[styles.container, { backgroundColor: background }]}>
       <GiftedChat
         messages={messages}
         renderBubble={renderBubble}
+        renderInputToolbar={renderInputToolbar}
+        renderActions={renderCustomActions}
+        renderCustomView={renderCustomView}
         onSend={(messages) => onSend(messages)}
         user={{
           _id: userID,
-          name,
+          name: username,
         }}
       />
       {(Platform.OS === 'android' || Platform.OS === 'ios') && <KeyboardAvoidingView behavior="height" />}
